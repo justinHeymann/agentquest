@@ -1,6 +1,8 @@
 import importlib.resources
 import json
+import os
 import pprint
+from pathlib import Path
 from termcolor import colored
 
 class Observation():
@@ -18,7 +20,18 @@ def load_data(benchmark, category=None):
     # Load benchmarks games
     base_package_name  = __package__.split('.')[0]
     base_package_path = importlib.resources.files(base_package_name)
-    with open(base_package_path / f'data/{benchmark}/games.json', 'r') as file:
+    data_path = base_package_path / f'data/{benchmark}/games.json'
+    if not data_path.exists() and benchmark == 'autopenbench':
+        benchmark_root = os.environ.get('AUTOPENBENCH')
+        if benchmark_root:
+            data_path = Path(benchmark_root).parent / 'data' / 'games.json'
+    if not data_path.exists():
+        raise FileNotFoundError(
+            f'AutoPenBench data not found at {data_path}. '
+            'Set AUTOPENBENCH to the benchmark directory, for example '
+            'AUTOPENBENCH=/path/to/auto-pen-bench/benchmark.'
+        )
+    with open(data_path, 'r') as file:
         games = json.loads(file.read())
     try:
         categories = list(games.keys())
